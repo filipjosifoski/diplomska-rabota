@@ -1,0 +1,740 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`snapshot for GitScanning Dev matches previous state 1`] = `
+{
+  "Resources": {
+    "GitHubSecret80707A5C": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "GenerateSecretString": {},
+        "Name": "github-token",
+      },
+      "Type": "AWS::SecretsManager::Secret",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "GitScanningBatchJobRole15C59E5A": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/AmazonS3FullAccess",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "GitScanningComputeEnvC7E560EE": {
+      "Properties": {
+        "ComputeEnvironmentName": "git-scanning-compute-env",
+        "ComputeResources": {
+          "MaxvCpus": 256,
+          "SecurityGroupIds": [
+            {
+              "Fn::GetAtt": [
+                "GitScanningComputeEnvSecurityGroup2AB05A95",
+                "GroupId",
+              ],
+            },
+          ],
+          "Subnets": [
+            {
+              "Ref": "GitScanningVPCPrivateSubnet1Subnet44A4EE64",
+            },
+          ],
+          "Type": "FARGATE",
+        },
+        "ReplaceComputeEnvironment": false,
+        "State": "ENABLED",
+        "Type": "managed",
+        "UpdatePolicy": {},
+      },
+      "Type": "AWS::Batch::ComputeEnvironment",
+    },
+    "GitScanningComputeEnvSecurityGroup2AB05A95": {
+      "Properties": {
+        "GroupDescription": "GitScanningDev/GitScanningComputeEnv/SecurityGroup",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "GitScanningVPCF668C0D9",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "GitScanningJobDefExecutionRoleD84B13BE": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "GitScanningJobDefExecutionRoleDefaultPolicy23A5BAD9": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":logs:",
+                    {
+                      "Ref": "AWS::Region",
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId",
+                    },
+                    ":log-group:/aws/batch/job:*",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": [
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:BatchGetImage",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "GitScanningRepository46F8BC4E",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": "ecr:GetAuthorizationToken",
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            {
+              "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Ref": "GitHubSecret80707A5C",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "GitScanningJobDefExecutionRoleDefaultPolicy23A5BAD9",
+        "Roles": [
+          {
+            "Ref": "GitScanningJobDefExecutionRoleD84B13BE",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "GitScanningJobDefinition77DD9F73": {
+      "Properties": {
+        "ContainerProperties": {
+          "Environment": [
+            {
+              "Name": "S3_BUCKET_NAME",
+              "Value": {
+                "Ref": "GitScanningReportingBucket5EAD3067",
+              },
+            },
+            {
+              "Name": "GH_ORG_NAME",
+              "Value": "gitleaks",
+            },
+            {
+              "Name": "PARALLEL_JOBS",
+              "Value": "16",
+            },
+          ],
+          "EphemeralStorage": {
+            "SizeInGiB": 100,
+          },
+          "ExecutionRoleArn": {
+            "Fn::GetAtt": [
+              "GitScanningJobDefExecutionRoleD84B13BE",
+              "Arn",
+            ],
+          },
+          "FargatePlatformConfiguration": {},
+          "Image": {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Fn::Select": [
+                    4,
+                    {
+                      "Fn::Split": [
+                        ":",
+                        {
+                          "Fn::GetAtt": [
+                            "GitScanningRepository46F8BC4E",
+                            "Arn",
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+                ".dkr.ecr.",
+                {
+                  "Fn::Select": [
+                    3,
+                    {
+                      "Fn::Split": [
+                        ":",
+                        {
+                          "Fn::GetAtt": [
+                            "GitScanningRepository46F8BC4E",
+                            "Arn",
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+                ".",
+                {
+                  "Ref": "AWS::URLSuffix",
+                },
+                "/",
+                {
+                  "Ref": "GitScanningRepository46F8BC4E",
+                },
+                ":latest",
+              ],
+            ],
+          },
+          "JobRoleArn": {
+            "Fn::GetAtt": [
+              "GitScanningBatchJobRole15C59E5A",
+              "Arn",
+            ],
+          },
+          "NetworkConfiguration": {
+            "AssignPublicIp": "DISABLED",
+          },
+          "ReadonlyRootFilesystem": false,
+          "ResourceRequirements": [
+            {
+              "Type": "MEMORY",
+              "Value": "8192",
+            },
+            {
+              "Type": "VCPU",
+              "Value": "4",
+            },
+          ],
+          "RuntimePlatform": {},
+          "Secrets": [
+            {
+              "Name": "GH_TOKEN",
+              "ValueFrom": {
+                "Fn::Join": [
+                  "",
+                  [
+                    {
+                      "Ref": "GitHubSecret80707A5C",
+                    },
+                    ":GH_TOKEN::",
+                  ],
+                ],
+              },
+            },
+          ],
+        },
+        "JobDefinitionName": "git-scanning-job-definition",
+        "PlatformCapabilities": [
+          "FARGATE",
+        ],
+        "RetryStrategy": {},
+        "Timeout": {},
+        "Type": "container",
+      },
+      "Type": "AWS::Batch::JobDefinition",
+    },
+    "GitScanningJobDefinitionEventsRole45D4B15F": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "events.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "GitScanningJobDefinitionEventsRoleDefaultPolicyB1BA2203": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "batch:SubmitJob",
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Ref": "GitScanningJobDefinition77DD9F73",
+                },
+                {
+                  "Fn::GetAtt": [
+                    "GitScanningJobQueueA6109CA1",
+                    "JobQueueArn",
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "GitScanningJobDefinitionEventsRoleDefaultPolicyB1BA2203",
+        "Roles": [
+          {
+            "Ref": "GitScanningJobDefinitionEventsRole45D4B15F",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "GitScanningJobQueueA6109CA1": {
+      "Properties": {
+        "ComputeEnvironmentOrder": [
+          {
+            "ComputeEnvironment": {
+              "Fn::GetAtt": [
+                "GitScanningComputeEnvC7E560EE",
+                "ComputeEnvironmentArn",
+              ],
+            },
+            "Order": 1,
+          },
+        ],
+        "JobQueueName": "git-scanning-job-queue",
+        "Priority": 1,
+        "State": "ENABLED",
+      },
+      "Type": "AWS::Batch::JobQueue",
+    },
+    "GitScanningReportingBucket5EAD3067": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256",
+              },
+            },
+          ],
+        },
+        "BucketName": "git-scanning-reporting-bucket",
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+        "VersioningConfiguration": {
+          "Status": "Enabled",
+        },
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "GitScanningReportingBucketPolicyDC8E1545": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "GitScanningReportingBucket5EAD3067",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "GitScanningReportingBucket5EAD3067",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "GitScanningReportingBucket5EAD3067",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "StringNotLike": {
+                  "aws:PrincipalArn": [
+                    {
+                      "Fn::GetAtt": [
+                        "GitScanningBatchJobRole15C59E5A",
+                        "Arn",
+                      ],
+                    },
+                    "arn:aws:sts::570360337377:assumed-role/AWSReservedSSO_DevOps_c688af156a511fdf/*",
+                  ],
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "GitScanningReportingBucket5EAD3067",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "GitScanningReportingBucket5EAD3067",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "GitScanningRepository46F8BC4E": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "RepositoryName": "git-scanning-repo",
+      },
+      "Type": "AWS::ECR::Repository",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "GitScanningScheduleRule02272FE4": {
+      "Properties": {
+        "ScheduleExpression": "cron(0 0 ? * 1 *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Fn::GetAtt": [
+                "GitScanningJobQueueA6109CA1",
+                "JobQueueArn",
+              ],
+            },
+            "BatchParameters": {
+              "JobDefinition": {
+                "Ref": "GitScanningJobDefinition77DD9F73",
+              },
+              "JobName": "GitScanningDevGitScanningScheduleRuleA19ADAAE",
+            },
+            "Id": "Target0",
+            "RoleArn": {
+              "Fn::GetAtt": [
+                "GitScanningJobDefinitionEventsRole45D4B15F",
+                "Arn",
+              ],
+            },
+          },
+        ],
+      },
+      "Type": "AWS::Events::Rule",
+    },
+    "GitScanningVPCF668C0D9": {
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "EnableDnsHostnames": true,
+        "EnableDnsSupport": true,
+        "InstanceTenancy": "default",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "GitScanningDev/GitScanningVPC",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::VPC",
+    },
+    "GitScanningVPCIGW4B8A2977": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "GitScanningDev/GitScanningVPC",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::InternetGateway",
+    },
+    "GitScanningVPCPrivateSubnet1DefaultRouteE74764A3": {
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": {
+          "Ref": "GitScanningVPCPublicSubnet1NATGateway460D1AA2",
+        },
+        "RouteTableId": {
+          "Ref": "GitScanningVPCPrivateSubnet1RouteTable16B5BA1D",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "GitScanningVPCPrivateSubnet1RouteTable16B5BA1D": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "GitScanningDev/GitScanningVPC/PrivateSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "GitScanningVPCF668C0D9",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "GitScanningVPCPrivateSubnet1RouteTableAssociation05C34747": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "GitScanningVPCPrivateSubnet1RouteTable16B5BA1D",
+        },
+        "SubnetId": {
+          "Ref": "GitScanningVPCPrivateSubnet1Subnet44A4EE64",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "GitScanningVPCPrivateSubnet1Subnet44A4EE64": {
+      "Properties": {
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::GetAZs": "",
+            },
+          ],
+        },
+        "CidrBlock": "10.0.1.0/24",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Private",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Private",
+          },
+          {
+            "Key": "Name",
+            "Value": "GitScanningDev/GitScanningVPC/PrivateSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "GitScanningVPCF668C0D9",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "GitScanningVPCPublicSubnet1DefaultRoute50A9FDA6": {
+      "DependsOn": [
+        "GitScanningVPCVPCGW9ED6FA7F",
+      ],
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "GitScanningVPCIGW4B8A2977",
+        },
+        "RouteTableId": {
+          "Ref": "GitScanningVPCPublicSubnet1RouteTable0DD97DF2",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "GitScanningVPCPublicSubnet1EIP9BE1F5CA": {
+      "Properties": {
+        "Domain": "vpc",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "GitScanningDev/GitScanningVPC/PublicSubnet1",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::EIP",
+    },
+    "GitScanningVPCPublicSubnet1NATGateway460D1AA2": {
+      "DependsOn": [
+        "GitScanningVPCPublicSubnet1DefaultRoute50A9FDA6",
+        "GitScanningVPCPublicSubnet1RouteTableAssociation119E4B66",
+      ],
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "GitScanningVPCPublicSubnet1EIP9BE1F5CA",
+            "AllocationId",
+          ],
+        },
+        "SubnetId": {
+          "Ref": "GitScanningVPCPublicSubnet1Subnet32B06440",
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "GitScanningDev/GitScanningVPC/PublicSubnet1",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::NatGateway",
+    },
+    "GitScanningVPCPublicSubnet1RouteTable0DD97DF2": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "GitScanningDev/GitScanningVPC/PublicSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "GitScanningVPCF668C0D9",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "GitScanningVPCPublicSubnet1RouteTableAssociation119E4B66": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "GitScanningVPCPublicSubnet1RouteTable0DD97DF2",
+        },
+        "SubnetId": {
+          "Ref": "GitScanningVPCPublicSubnet1Subnet32B06440",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "GitScanningVPCPublicSubnet1Subnet32B06440": {
+      "Properties": {
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::GetAZs": "",
+            },
+          ],
+        },
+        "CidrBlock": "10.0.0.0/24",
+        "MapPublicIpOnLaunch": true,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Public",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Public",
+          },
+          {
+            "Key": "Name",
+            "Value": "GitScanningDev/GitScanningVPC/PublicSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "GitScanningVPCF668C0D9",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "GitScanningVPCVPCGW9ED6FA7F": {
+      "Properties": {
+        "InternetGatewayId": {
+          "Ref": "GitScanningVPCIGW4B8A2977",
+        },
+        "VpcId": {
+          "Ref": "GitScanningVPCF668C0D9",
+        },
+      },
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+    },
+  },
+}
+`;
